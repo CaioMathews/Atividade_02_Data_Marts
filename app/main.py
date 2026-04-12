@@ -1,6 +1,14 @@
 from fastapi import FastAPI
-from app.routers import auth, usuarios
-
+from app.routers import (
+    auth,
+    usuarios,
+    produtos,
+    consumidores,
+    vendedores,
+    pedidos,
+    itens_pedidos,
+    avaliacoes_pedidos
+)
 
 app = FastAPI(
     title="Sistema de Compras Online",
@@ -16,6 +24,13 @@ def health_check():
 
 app.include_router(auth.router)
 app.include_router(usuarios.router)
+app.include_router(produtos.router)
+app.include_router(consumidores.router)
+app.include_router(vendedores.router)
+app.include_router(pedidos.router)
+app.include_router(itens_pedidos.router)
+app.include_router(avaliacoes_pedidos.router)
+
 
 if __name__ == "__main__":
     import uvicorn

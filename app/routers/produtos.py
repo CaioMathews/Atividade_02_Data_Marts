@@ -17,6 +17,13 @@ from app.routers.usuarios import obter_usuario_atual, exigir_gerente
 
 router = APIRouter(prefix="/produtos", tags=["Produtos"])
 
+@router.get("/categorias", response_model=List[str])
+async def listar_categorias(db: Session = Depends(get_db)):
+    resultado = db.query(Produto.categoria_produto).distinct().all()
+    
+    categorias = sorted([linha[0] for linha in resultado if linha[0]])
+    
+    return categorias
 
 @router.get("/", response_model=dict)
 async def listar_produtos(
@@ -25,7 +32,7 @@ async def listar_produtos(
     busca: Optional[str] = Query(None),
     categoria: Optional[str] = Query(None),
     avaliacao_minima: Optional[float] = Query(None, ge=0, le=5),
-    ordenar: Optional[str] = Query(None),  # nome_asc | nome_desc
+    ordenar: Optional[str] = Query(None),  
     db: Session = Depends(get_db)
 ):
     query = db.query(Produto)

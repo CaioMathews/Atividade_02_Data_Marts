@@ -23,10 +23,6 @@ Windows:
 venv\Scripts\activate
 ```
 
-Mac/Linux:
-```bash
-source venv/bin/activate
-```
 
 **2. Instale as dependências**
 
@@ -37,11 +33,8 @@ pip install -r requirements.txt
 **3. Configure as variáveis de ambiente**
 
 Copie o arquivo de exemplo e ajuste se necessário:
-
-```bash
-cp .env.example .env
-```
-
+Crie um arquivo .env na raiz do backend baseado no arquivo .env.example.
+⚠️ IMPORTANTE: Você deve obrigatoriamente definir uma SECRET_KEY= dentro do seu arquivo .env
 ---
 
 ## Banco de dados
@@ -60,33 +53,48 @@ Este comando lê os arquivos dentro de `alembic/versions/` e cria todas as tabel
 alembic current
 ```
 
-### Criar uma nova migration (após alterar um model)
-
-```bash
-alembic revision -m "descricao da mudanca"
-```
-
-Depois edite o arquivo gerado em `alembic/versions/` adicionando as instruções em `upgrade()` e `downgrade()`.
-
-### Desfazer a última migration
-
-```bash
-alembic downgrade -1
-```
-
 ---
+### Adicionar csv
+
+Criar a pasta csv (Atividade_02_Data_Marts\csv) e colocar todos os csv nela
+
+### População do Banco de Dados (Seed)
+
+Execute os scripts para carregar os dados iniciais dos arquivos CSV 
+```bash
+python -m app.scripts.seed
+python -m app.scripts.seed_imagens
+```
 
 ## Rodando a API
 
 ```bash
-python -m app.main
+uvicorn app.main:app --reload
 ```
 
 A API estará disponível em: [http://localhost:8000](http://localhost:8000)
 
-Documentação: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
+## 💻 Configuração do Frontend
+Para rodar a interface do usuário, utilize o terminal na pasta raiz do frontend:
+
+### 1. Instalação das Dependências
+Utilize o pnpm para instalar os pacotes necessários:
+
+```bash
+pnpm install
+```
+
+### 2. Execução do Projeto
+Inicie o servidor de desenvolvimento do Vite:
+
+```bash
+pnpm dev
+```
+
+OBS: o front está no repositorio 
+https://github.com/CaioMathews/Atividade_02_Data_Marts_front.git
 
 ## Estrutura do projeto
 
@@ -110,16 +118,18 @@ backend/
 │   │   ├── pedido.py
 │   │   ├── item_pedido.py
 │   │   └── avaliacao_pedido.py
-│   └── routers/             # Rotas da API
-│       ├── consumidores.py
-│       ├── produtos.py
-│       ├── vendedores.py
-│       ├── pedidos.py
-│       ├── itens_pedidos.py
-│       └── avaliacoes_pedidos.py
+│   ├── routers/             # Rotas da API
+│   │   ├── consumidores.py
+│   │   ├── produtos.py
+│   │   ├── vendedores.py
+│   │   ├── pedidos.py
+│   │   ├── itens_pedidos.py
+│   │   └── avaliacoes_pedidos.py
+│   └── scripts/             # Scripts de população (seed)
 ├── alembic/
 │   ├── env.py               # Configuração do Alembic
 │   └── versions/            # Arquivos de migration
+├── csv/                     # Arquivos .csv para o seed
 ├── alembic.ini              # Configuração principal do Alembic
 ├── requirements.txt
 └── .env.example

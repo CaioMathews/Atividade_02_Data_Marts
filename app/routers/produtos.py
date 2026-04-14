@@ -136,6 +136,8 @@ async def avaliacoes_produto(id_produto: str, db: Session = Depends(get_db)):
     if not produto:
         raise HTTPException(status_code=404, detail="Produto não encontrado.")
 
+    total_vendas = db.query(ItemPedido).filter(ItemPedido.id_produto == id_produto).count()
+
     avaliacoes = (
         db.query(AvaliacaoPedido)
         .join(ItemPedido, ItemPedido.id_pedido == AvaliacaoPedido.id_pedido)
@@ -155,6 +157,7 @@ async def avaliacoes_produto(id_produto: str, db: Session = Depends(get_db)):
         "nome_produto": produto.nome_produto,
         "total_avaliacoes": len(avaliacoes),
         "media_avaliacao": round(media, 2) if media else None,
+        "total_vendas": total_vendas, 
         "avaliacoes": [
             {
                 "avaliacao": a.avaliacao,

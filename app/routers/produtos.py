@@ -18,13 +18,52 @@ from app.routers.usuarios import obter_usuario_atual, exigir_gerente
 router = APIRouter(prefix="/produtos", tags=["Produtos"])
 
 
-@router.get("/", response_model=List[ProdutoResposta])
+@router.get("/", response_model=dict)
 async def listar_produtos(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    busca: Optional[str] = Query(None),
+    categoria: Optional[str] = Query(None),
+    avaliacao_minima: Optional[float] = Query(None, ge=0, le=5),
+    ordenar: Optional[str] = Query(None),  # nome_asc | nome_desc
     db: Session = Depends(get_db)
 ):
-    return db.query(Produto).offset(skip).limit(limit).all()
+    query = db.query(Produto)
+
+    if busca:
+        query = query.filter(Produto.nome_produto.ilike(f"%{busca}%"))
+    if categoria:
+        query = query.filter(Produto.categoria_produto == categoria)
+
+    if avaliacao_minima is not None and avaliacao_minima > 0:
+        subq = (
+            db.query(
+                ItemPedido.id_produto,
+                func.avg(AvaliacaoPedido.avaliacao).label("media"),
+            )
+            .join(AvaliacaoPedido, AvaliacaoPedido.id_pedido == ItemPedido.id_pedido)
+            .group_by(ItemPedido.id_produto)
+            .subquery()
+        )
+        query = (
+            query
+            .join(subq, subq.c.id_produto == Produto.id_produto)
+            .filter(subq.c.media >= avaliacao_minima)
+        )
+
+    total = query.with_entities(func.count(func.distinct(Produto.id_produto))).scalar()
+
+    if ordenar == "nome_asc":
+        query = query.order_by(Produto.nome_produto.asc())
+    elif ordenar == "nome_desc":
+        query = query.order_by(Produto.nome_produto.desc())
+
+    produtos = query.offset(skip).limit(limit).all()
+
+    return {
+        "total": total,
+        "produtos": [ProdutoResposta.model_validate(p) for p in produtos],
+    }
 
 
 @router.get("/buscar", response_model=List[ProdutoResposta])
@@ -91,7 +130,7 @@ async def avaliacoes_produto(id_produto: str, db: Session = Depends(get_db)):
                 "data_comentario": a.data_comentario,
             }
             for a in avaliacoes
-        ]
+        ],
     }
 
 
@@ -133,5 +172,5 @@ async def deletar_produto(id_produto: str, db: Session = Depends(get_db)):
     return ProdutoDeletadoResposta(
         mensagem="Produto deletado com sucesso.",
         id_produto=produto.id_produto,
-        nome_produto=produto.nome_produto
+        nome_produto=produto.nome_produto,
     )

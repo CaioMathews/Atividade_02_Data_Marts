@@ -28,7 +28,7 @@ def obter_usuario_atual(
     token = credenciais.credentials
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        id_usuario: str = payload.get("sub")
+        id_usuario: int = payload.get("sub")
 
         if id_usuario is None:
             raise HTTPException(status_code=401, detail="Token inválido.")
@@ -75,9 +75,12 @@ async def criar_usuario(dados: UsuarioCriar, db: Session = Depends(get_db)):
 async def listar_usuarios(db: Session = Depends(get_db)):
     return db.query(Usuario).all()
 
+@router.get("/me", response_model=UsuarioResposta)
+async def meu_perfil(usuario_atual: Usuario = Depends(obter_usuario_atual)):
+    return usuario_atual
 
 @router.get("/{id_usuario}", response_model=UsuarioResposta)
-async def buscar_usuario(id_usuario: str, db: Session = Depends(get_db)):
+async def buscar_usuario(id_usuario: int, db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
 
     if not usuario:
@@ -88,7 +91,7 @@ async def buscar_usuario(id_usuario: str, db: Session = Depends(get_db)):
 
 @router.patch("/{id_usuario}", response_model=UsuarioResposta)
 async def atualizar_usuario(
-    id_usuario: str,
+    id_usuario: int,
     dados: UsuarioAtualizar,
     db: Session = Depends(get_db),
     usuario_atual: Usuario = Depends(obter_usuario_atual)
@@ -119,7 +122,7 @@ async def atualizar_usuario(
 
 
 @router.delete("/{id_usuario}", response_model=UsuarioDeletadoResposta, dependencies=[Depends(exigir_gerente)])
-async def deletar_usuario(id_usuario: str, db: Session = Depends(get_db)):
+async def deletar_usuario(id_usuario: int, db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.id_usuario == id_usuario).first()
 
     if not usuario:

@@ -17,13 +17,39 @@ from app.routers.usuarios import obter_usuario_atual, exigir_gerente
 
 router = APIRouter(prefix="/produtos", tags=["Produtos"])
 
-@router.get("/categorias", response_model=List[str])
+@router.get("/categorias", response_model=dict)
 async def listar_categorias(db: Session = Depends(get_db)):
+
+    AGRUPAMENTO = {
+        'Tecnologia & Eletrônicos': ['consoles_games', 'informatica_acessorios', 'audio', 'telefonia', 'telefonia_fixa', 'eletronicos', 'pcs', 'tablets_impressao_imagem', 'pc_gamer', 'cine_foto'],
+        'Casa, Móveis & Construção': ['cama_mesa_banho', 'moveis_decoracao', 'utilidades_domesticas', 'casa_conforto', 'casa_conforto_2', 'moveis_escritorio', 'moveis_sala', 'moveis_quarto', 'moveis_colchao_e_estofado', 'moveis_cozinha_area_de_servico_jantar_e_jardim', 'climatizacao', 'eletrodomesticos', 'eletrodomesticos_2', 'eletroportateis', 'portateis_casa_forno_e_cafe', 'portateis_cozinha_e_preparadores_de_alimentos', 'casa_construcao', 'construcao_ferramentas_construcao', 'construcao_ferramentas_ferramentas', 'construcao_ferramentas_iluminacao', 'construcao_ferramentas_jardim', 'construcao_ferramentas_seguranca'],
+        'Moda & Beleza': ['beleza_saude', 'fashion_calcados', 'perfumaria', 'relogios_presentes', 'fashion_bolsas_e_acessorios', 'fashion_roupas_masculinas', 'fashion_roupas_femininas', 'fashion_underwear_e_moda_praia', 'fashion_esporte', 'fashion_roupa_feminina', 'fashion_roupa_infanto_juvenil', 'fashion_roupa_masculina', 'malas_acessorios'],
+        'Esporte & Entretenimento': ['esporte_lazer', 'brinquedos', 'cool_stuff', 'instrumentos_musicais', 'artigos_de_festas', 'artigos_de_natal', 'cds_dvds_musicais', 'dvds_blu_ray', 'musica', 'livros_interesse_geral', 'livros_importados', 'livros_tecnicos', 'artes', 'artes_e_artesanato'],
+        'Bebês & Pets': ['bebes', 'fraldas_higiene', 'pet_shop'],
+        'Supermercado & Diversos': ['alimentos', 'alimentos_bebidas', 'bebidas', 'agro_industria_e_comercio', 'industria_comercio_e_negocios', 'ferramentas_jardim', 'papelaria', 'flores', 'la_cuisine', 'market_place', 'seguros_e_servicos', 'sinalizacao_e_seguranca', 'automotivo', 'nao_informado']
+    }
+
     resultado = db.query(Produto.categoria_produto).distinct().all()
+    categorias_banco = sorted([linha[0] for linha in resultado if linha[0]])
     
-    categorias = sorted([linha[0] for linha in resultado if linha[0]])
+    categorias_agrupadas = {}
     
-    return categorias
+    for cat in categorias_banco:
+        encontrou = False
+        for grupo, itens in AGRUPAMENTO.items():
+            if cat in itens:
+                if grupo not in categorias_agrupadas:
+                    categorias_agrupadas[grupo] = []
+                categorias_agrupadas[grupo].append(cat)
+                encontrou = True
+                break
+                
+        if not encontrou:
+            if "Outros" not in categorias_agrupadas:
+                categorias_agrupadas["Outros"] = []
+            categorias_agrupadas["Outros"].append(cat)
+            
+    return categorias_agrupadas
 
 @router.get("/", response_model=dict)
 async def listar_produtos(
